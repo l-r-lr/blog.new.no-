@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑器页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+    <style>
+        body.dark {
+            background-color: #1a202c;
+            color: #e2e8f0;
+        }
+
+        body.dark #editor {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            border-color: #4a5568;
+        }
+
+        body.dark #preview {
+            background-color: #2d3748;
+            color: #e2e8f0;
+        }
+
+        #editor {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        #preview {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .toolbar button {
+            padding: 5px 10px;
+            background-color: #f3f4f6;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+
+        body.dark .toolbar button {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            border-color: #4a5568;
+        }
+
+        .toolbar button:hover {
+            background-color: #e5e7eb;
+        }
+
+        body.dark .toolbar button:hover {
+            background-color: #4b5563;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-2">文章编辑器</h1>
+        <div class="mb-4">
+            <label for="category" class="block text-gray-700 mb-1">文章分类:</label>
+            <input type="text" id="category" class="border p-2 w-full" placeholder="请输入文章分类">
+        </div>
+        <div class="toolbar">
+            <button onclick="addMarkdown('**', '**')"><i class="fa-solid fa-bold"></i></button>
+            <button onclick="addMarkdown('*', '*')"><i class="fa-solid fa-italic"></i></button>
+            <button onclick="addMarkdown('- ', '')"><i class="fa-solid fa-list-ul"></i></button>
+            <button onclick="addMarkdown('1. ', '')"><i class="fa-solid fa-list-ol"></i></button>
+            <button onclick="addMarkdown('[', '](url)')"><i class="fa-solid fa-link"></i></button>
+            <button onclick="addMarkdown('![', '](image-url)')"><i class="fa-solid fa-image"></i></button>
+        </div>
+        <textarea id="editor" class="border p-2 w-full"></textarea>
+        <div id="preview" class="mt-4 bg-white p-4 rounded shadow"></div>
+        <button id="save-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4" onclick="saveArticle()">保存文章</button>
+    </div>
+
+    <script>
+        const editor = document.getElementById('editor');
+        const preview = document.getElementById('preview');
+        const saveBtn = document.getElementById('save-btn');
+        const categoryInput = document.getElementById('category');
+
+        function getEditorContent() {
+            return {
+                content: editor.value,
+                category: categoryInput.value
+            };
+        }
+
+        window.editor = {
+            getEditorContent
+        };
+
+        editor.addEventListener('input', function () {
+            try {
+                const content = editor.value;
+                preview.innerHTML = marked.parse(content);
+            } catch (error) {
+                console.error('Markdown解析出错:', error);
+            }
+        });
+
+        function addMarkdown(prefix, suffix) {
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            const selectedText = editor.value.substring(start, end);
+            const newText = prefix + selectedText + suffix;
+            editor.value = editor.value.substring(0, start) + newText + editor.value.substring(end);
+            editor.selectionStart = start + prefix.length;
+            editor.selectionEnd = start + prefix.length + selectedText.length;
+        }
+
+        function saveArticle() {
+            try {
+                const data = getEditorContent();
+                // 将文章内容保存到本地存储
+                localStorage.setItem('articleContent', data.content);
+                localStorage.setItem('articleCategory', data.category);
+                console.log('保存的文章内容:', data.content);
+                console.log('保存的文章分类:', data.category);
+                alert('文章已保存');
+            } catch (error) {
+                console.error('保存文章出错:', error);
+                alert('保存文章时出现错误，请稍后重试');
+            }
+        }
+
+        // 主题适配
+        const isDarkTheme = document.body.classList.contains('dark');
+        if (isDarkTheme) {
+            document.body.classList.add('dark');
+        }
+
+        // 页面加载时从本地存储获取文章内容
+        const savedContent = localStorage.getItem('articleContent');
+        const savedCategory = localStorage.getItem('articleCategory');
+        if (savedContent) {
+            editor.value = savedContent;
+            preview.innerHTML = marked.parse(savedContent);
+        }
+        if (savedCategory) {
+            categoryInput.value = savedCategory;
+        }
+
+
+      //半成品
+            //半成品
+            //半成品
+            //半成品
+            //半成品
+            //半成品
+            //半成品
