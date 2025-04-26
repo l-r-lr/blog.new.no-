@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LR博客</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
+    <style>
+        body.dark {
+            background-color: #1a202c;
+            color: #e2e8f0;
+        }
+
+        body.dark .bg-white {
+            background-color: #2d3748;
+        }
+
+        body.dark .text-gray-600 {
+            color: #cbd5e0;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.5s;
+        }
+
+        .fade-enter,
+        .fade-leave-to {
+            opacity: 0;
+        }
+
+        .bg-hero {
+            background-size: cover;
+            background-position: center;
+        }
+
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .settings-modal.active {
+            display: flex;
+        }
+
+        .settings-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .theme-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-option:hover {
+            transform: scale(1.05);
+        }
+
+        .theme-color {
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            margin-right: 0.75rem;
+        }
+
+        .layout-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .layout-option:hover {
+            transform: scale(1.05);
+        }
+
+        .post-layout-left-img {
+            display: flex;
+            align-items: start;
+        }
+
+        .post-layout-left-img img {
+            margin-right: 1rem;
+        }
+
+        .post-layout-top-img img {
+            margin-bottom: 1rem;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -280px;
+            width: 280px;
+            height: 100vh;
+            padding: 2rem;
+            background-color: #ffffff;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 10;
+            transition: right 0.3s ease;
+        }
+
+        body.dark .sidebar {
+            background-color: #2d3748;
+        }
+
+        .sidebar.open {
+            right: 0;
+        }
+
+        .sidebar-avatar {
+            width: 6rem;
+            height: 6rem;
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .sidebar-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .sidebar-name {
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-signature {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        /* 主内容区域样式 */
+        .main-content {
+            margin-right: 0;
+            transition: margin-right 0.3s ease;
+        }
+
+        .main-content.sidebar-open {
+            margin-right: 280px;
+        }
+
+        /* 导航栏按钮样式 */
+        .nav-button {
+            color: #6b7280;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .nav-button:hover {
+            color: #374151;
+            background-color: #e5e7eb;
+        }
+
+        body.dark .nav-button {
+            color: #cbd5e0;
+        }
+
+        body.dark .nav-button:hover {
+            color: #e2e8f0;
+            background-color: #4b5563;
+        }
+
+        /* 限制导航栏头像尺寸 */
+        .nav-avatar {
+            width: 3rem;
+            height: 3rem;
+            object-fit: cover;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- 导航栏 -->
+        <nav class="bg-white dark:bg-gray-800 shadow-md">
+            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+                <div class="flex items-center">
+                    <!-- 绑定导航栏头像并添加尺寸限制 -->
+                    <img :src="sidebarAvatar" alt="Avatar" class="rounded-full mr-2 nav-avatar">
+                    <h1 class="text-2xl font-bold">LR博客</h1>
+                </div>
+                <div class="flex items-center">
+                    <input v-model="searchQuery" type="text" placeholder="搜索萝莉文章"
+                        class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 mr-2">
+                    <button @click="toggleTheme" class="nav-button focus:outline-none mr-2">
+                        <i :class="isDarkTheme ? 'fa-solid fa-sun' : 'fa-solid fa-moon'"></i>
+                    </button>
+                    <button @click="toggleSettings" class="nav-button focus:outline-none mr-2">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                    <button @click="toggleSidebar" class="nav-button focus:outline-none">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 英雄区域 -->
+        <div :style="{ backgroundImage: `url(${heroBgImage})` }" class="bg-hero h-64 flex items-center justify-center">
+            <div class="text-white text-center">
+                <h2 class="text-4xl font-bold mb-2">LR博客,喜欢萝莉</h2>
+                <p class="text-lg">发现萝莉和****</p>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div :class="['main-content', { 'sidebar-open': sidebarOpen }]">
+            <!-- 博客列表 -->
+            <div class="container mx-auto px-4 py-8">
+                <transition-group name="fade" tag="div">
+                    <div 
+                        v-for="post in filteredPosts" 
+                        :key="post.id" 
+                        :class="[
+                            postLayout === 'left-img' ? 'post-layout-left-img' : '',
+                            postLayout === 'top-img' ? 'post-layout-top-img' : '',
+                            'mb-8 p-6 bg-white dark:bg-gray-700 shadow-md rounded-md'
+                        ]"
+                        @click="showPostDetails(post)"
+                    >
+                        <template v-if="postLayout === 'left-img'">
+                            <img :src="post.cover" alt="Post Image" class="rounded-md">
+                            <div>
+                                <h2 class="text-2xl font-bold mb-2">{{ post.title }}</h2>
+                                <div class="mb-2 text-gray-600">分类: {{ post.category }}</div>
+                                <div v-html="sanitizeMarkdown(post.content.slice(0, 100) + '...')"></div>
+                            </div>
+                        </template>
+                        <template v-if="postLayout === 'top-img'">
+                            <img :src="post.cover" alt="Post Image" class="rounded-md w-full">
+                            <h2 class="text-2xl font-bold mb-2">{{ post.title }}</h2>
+                            <div class="mb-2 text-gray-600">分类: {{ post.category }}</div>
+                            <div v-html="sanitizeMarkdown(post.content.slice(0, 100) + '...')"></div>
+                        </template>
+                    </div>
+                </transition-group>
+                <!-- 分页 -->
+                <div class="flex justify-center">
+                    <button @click="prevPage" :disabled="currentPage === 1"
+                        class="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md mr-2">上一页</button>
+                    <button @click="nextPage" :disabled="currentPage === totalPages"
+                        class="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md">下一页</button>
+                </div>
+            </div>
+
+            <!-- 文章详情页 -->
+            <div v-if="showDetails" class="fixed top-0 left-0 right-0 bottom-0 bg-gray-800 bg-opacity-75 flex justify-center items-center">
+                <div class="bg-white dark:bg-gray-700 p-8 rounded-md w-3/4">
+                    <div class="flex items-start">
+                        <img :src="selectedPost.cover" alt="Post Image" class="rounded-md mr-4">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-2">{{ selectedPost.title }}</h2>
+                            <div class="mb-2 text-gray-600">分类: {{ selectedPost.category }}</div>
+                            <div v-html="sanitizeMarkdown(selectedPost.content)"></div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-4 mt-4">
+                        <button @click="hidePostDetails"
+                            class="bg-red-500 text-white px-4 py-2 rounded-md">关闭</button>
+                        <button @click="editPost"
+                            class="bg-blue-500 text-white px-4 py-2 rounded-md">编辑此文章（失败了）</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧边栏 -->
+        <div :class="['sidebar', { open: sidebarOpen }]">
+            <button @click="toggleSidebar" class="absolute top-2 right-2 text-gray-600 dark:text-gray-300 focus:outline-none">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="sidebar-avatar">
+                <img :src="sidebarAvatar" alt="博主头像">
+            </div>
+            <div class="sidebar-name">LR</div>
+            <div class="sidebar-signature">临渊羡鱼，不如退而结网</div>
+            <!-- 导航内容 -->
+            <div class="mt-8">
+                <ul class="space-y-2">
+                    <li><a href="#" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">首页</a></li>
+                    <li><a href="#" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">文章</a></li>
+                    <li><a href="#" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">关于me</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 设置模态框 -->
+        <div :class="['settings-modal', { active: showSettings }]" @click.self="toggleSettings">
+            <div class="settings-content">
+                <h2 class="text-2xl font-bold mb-2">设置</h2>
+                <div class="mb-4">
+                    <label for="bg-image" class="block text-gray-700 dark:text-gray-300 mb-1">上传上面区域背景图片</label>
+                    <input @change="handleHeroBgImageUpload" type="file" id="bg-image" class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1">
+                </div>
+                <div class="mb-4">
+                    <label for="body-bg-image" class="block text-gray-700 dark:text-gray-300 mb-1">上传页面整体背景图片</label>
+                    <input @change="handleBodyBgImageUpload" type="file" id="body-bg-image" class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1">
+                    <div class="mt-2">
+                        <input type="checkbox" v-model="themeFollowBg" id="theme-follow-bg" class="mr-1">
+                        <label for="theme-follow-bg">网站主题跟随背景图片</label>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="sidebar-avatar" class="block text-gray-700 dark:text-gray-300 mb-1">上传我的头像</label>
+                    <input @change="handleSidebarAvatarUpload" type="file" id="sidebar-avatar" class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1">
+                </div>
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold mb-2">主题颜色设置</h3>
+                    <div class="theme-option" @click="setThemeColor('#ffffff', '#1a202c')">
+                        <div class="theme-color" style="background-color: #ffffff;"></div>
+                        <span>浅色主题</span>
+                    </div>
+                    <div class="theme-option" @click="setThemeColor('#1a202c', '#e2e8f0')">
+                        <div class="theme-color" style="background-color: #1a202c;"></div>
+                        <span>深色主题</span>
+                    </div>
+                    <div class="theme-option" @click="setThemeColor('#f3f4f6', '#4b5563')">
+                        <div class="theme-color" style="background-color: #f3f4f6;"></div>
+                        <span>灰色主题</span>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold mb-2">文章排版设置</h3>
+                    <div class="layout-option" @click="setPostLayout('left-img')">
+                        <i class="fa-solid fa-image-left text-lg mr-2"></i>
+                        <span>左图右文</span>
+                    </div>
+                    <div class="layout-option" @click="setPostLayout('top-img')">
+                        <i class="fa-solid fa-image-top text-lg mr-2"></i>
+                        <span>上图下文</span>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold mb-2">文章排序方式</h3>
+                    <select v-model="sortBy" @change="sortPosts" class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 w-full">
+                        <option value="titleAsc">标题升序</option>
+                        <option value="titleDesc">标题降序</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold mb-2">每页显示文章数量</h3>
+                    <input v-model="postsPerPage" type="number" min="1" class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 w-full">
+                </div>
+                <!-- 从编辑器获取内容的按钮 -->
+                <button @click="getEditorContent" class="bg-blue-500 text-white px-4 py-2 rounded-md mt-4">从编辑器获取内容</button>
+                <button @click="toggleSettings" class="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md mt-4">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        try {
+            const { createApp } = Vue;
+            const colorThief = new ColorThief();
+
+            const app = createApp({
+                data() {
+                    return {
+                        isDarkTheme: false,
+                        searchQuery: '',
+                        currentPage: 1,
+                        postsPerPage: 3,
+                        posts: [
+                            {
+                                id: 1,
+                                title: "动漫 二次元 插画",
+                                content: "动漫 二次元 插画 少女壁纸【8】(动漫静态壁纸) - 静态壁纸下载",
+                                cover: "https://img-baofun.zhhainiao.com/fs/6a1487e2413e305cbb1564faacd605b5.jpg",
+                                category: "动漫 二次元 插画"
+                            },
+                            {
+                                id: 2,
+                                title: "埃罗芒阿老师壁纸",
+                                content: "埃罗芒阿老师壁纸【35】(动漫静态壁纸) - 静态壁纸下载",
+                                cover: "https://img-baofun.zhhainiao.com/pcwallpaper_ugc/static/2a89e0a62a8755a7a7d77d22eb11df97.jpg?x-oss-process=image%2fresize%2cm_lfit%2cw_1920%2ch_1080",
+                                category: "生活"
+                            },
+                            {
+                                id: 3,
+                                title: "唯美意境二次元美女桌面壁纸 ",
+                                content: "唯美意境二次元美女桌面壁纸 ",
+                                cover: "https://p.qpic.cn/dnfbbspic/0/dnfbbs_dnfbbs_dnf_gamebbs_qq_com_forum_201906_17_093116mans0dymictt88ir.jpg/0",
+                                category: "唯美意境二次元美女桌面壁纸 "
+                            },
+                            {
+                                id: 4,
+                                title: "动漫 我只喜欢你 萝莉",
+                                content: "动漫 我只喜欢你 萝莉 少女 手绘 卡通 动漫卡通壁纸(动漫静态壁纸) - 静态壁纸下载",
+                                cover: "https://img-baofun.zhhainiao.com/fs/8e8a7908fb1af888d961cf9ea5a04715.jpg",
+                                category: "动漫 我只喜欢你 萝莉"
+                            },
+                            {
+                                id: 5,
+                                title: "动漫 二次元",
+                                content: "动漫 二次元 插画 少女壁纸(动漫静态壁纸) - 静态壁纸下载",
+                                cover: "https://img-baofun.zhhainiao.com/pcwallpaper_ugc/static/ec61d1aba1464bcfcdc34e5949c76dd5.jpeg?x-oss-process=image%2fresize%2cm_lfit%2cw_3840%2ch_2160",
+                                category: "动漫 二次元"
+                            }
+                        ],
+                        showDetails: false,
+                        selectedPost: {},
+                        showSettings: false,
+                        heroBgImage: localStorage.getItem('heroBgImage') || 'https://ts1.tc.mm.bing.net/th/id/R-C.adca66476e3e526aa8800e3ebdfe875e?rik=wtqMwM111kMs9w&riu=http%3a%2f%2fi0.hdslb.com%2fbfs%2farticle%2fe8951fae519ca8be63eb3ac61f3548c2a0fa5d2b.jpg&ehk=X5EoxJ0EJbJa23lZZ8CYtmDmbQv4EJ6VQ85A2KoMlCM%3d&risl=&pid=ImgRaw&r=0',
+                        bodyBgImage: localStorage.getItem('bodyBgImage') || '',
+                        themeColors: {
+                            bodyBg: '#ffffff',
+                            textColor: '#1a202c'
+                        },
+                        postLayout: 'left-img',
+                        sidebarAvatar: localStorage.getItem('sidebarAvatar') || 'https://q1.qlogo.cn/g?b=qq&nk=1711474010&s=100',
+                        sidebarOpen: false,
+                        sortBy: 'titleAsc',
+                        themeFollowBg: false
+                    };
+                },
+                computed: {
+                    filteredPosts() {
+                        let sortedPosts = [...this.posts];
+                        if (this.sortBy === 'titleAsc') {
+                            sortedPosts.sort((a, b) => a.title.localeCompare(b.title));
+                        } else if (this.sortBy === 'titleDesc') {
+                            sortedPosts.sort((a, b) => b.title.localeCompare(a.title));
+                        }
+                        const startIndex = (this.currentPage - 1) * this.postsPerPage;
+                        const endIndex = startIndex + this.postsPerPage;
+                        return sortedPosts.filter(post =>
+                            post.title.toLowerCase().includes(this.searchQuery.toLowerCase())
+                        ).slice(startIndex, endIndex);
+                    },
+                    totalPages() {
+                        return Math.ceil(this.posts.filter(post =>
+                            post.title.toLowerCase().includes(this.searchQuery.toLowerCase())
+                        ).length / this.postsPerPage);
+                    }
+                },
+                methods: {
+                    toggleTheme() {
+                        this.isDarkTheme = !this.isDarkTheme;
+                        document.body.classList.toggle('dark', this.isDarkTheme);
+                    },
+                    prevPage() {
+                        if (this.currentPage > 1) {
+                            this.currentPage--;
+                        }
+                    },
+                    nextPage() {
+                        if (this.currentPage < this.totalPages) {
+                            this.currentPage++;
+                        }
+                    },
+                    showPostDetails(post) {
+                        this.selectedPost = post;
+                        this.showDetails = true;
+                        gsap.from('.bg-white', {
+                            duration: 0.5,
+                            opacity: 0,
+                            scale: 0.8
+                        });
+                    },
+                    hidePostDetails() {
+                        this.showDetails = false;
+                    },
+                    toggleSettings() {
+                        this.showSettings = !this.showSettings;
+                    },
+                    handleHeroBgImageUpload(event) {
+                        const file = event.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                this.heroBgImage = e.target.result;
+                                localStorage.setItem('heroBgImage', this.heroBgImage);
+                                if (this.themeFollowBg) {
+                                    this.setThemeFromBg(this.heroBgImage);
+                                }
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    },
+                    handleBodyBgImageUpload(event) {
+                        const file = event.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                this.bodyBgImage = e.target.result;
+                                document.body.style.backgroundImage = `url(${this.bodyBgImage})`;
+                                document.body.style.backgroundSize = 'cover';
+                                document.body.style.backgroundPosition = 'center';
+                                localStorage.setItem('bodyBgImage', this.bodyBgImage);
+                                if (this.themeFollowBg) {
+                                    this.setThemeFromBg(this.bodyBgImage);
+                                }
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    },
+                    handleSidebarAvatarUpload(event) {
+                        const file = event.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                this.sidebarAvatar = e.target.result;
+                                localStorage.setItem('sidebarAvatar', this.sidebarAvatar);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    },
+                    setThemeColor(bodyBg, textColor) {
+                        this.themeColors.bodyBg = bodyBg;
+                        this.themeColors.textColor = textColor;
+                        document.body.style.backgroundColor = bodyBg;
+                        document.body.style.color = textColor;
+                    },
+                    setPostLayout(layout) {
+                        this.postLayout = layout;
+                    },
+                    toggleSidebar() {
+                        this.sidebarOpen = !this.sidebarOpen;
+                    },
+                    sortPosts() {
+                        this.currentPage = 1;
+                    },
+                    setThemeFromBg(bgImage) {
+                        const img = new Image();
+                        img.src = bgImage;
+                        img.crossOrigin = 'Anonymous';
+                        img.onload = () => {
+                            const [r, g, b] = colorThief.getColor(img);
+                            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                            const bodyBg = `rgb(${r}, ${g}, ${b})`;
+                            const textColor = luminance > 0.5 ? '#1a202c' : '#e2e8f0';
+                            this.setThemeColor(bodyBg, textColor);
+                        };
+                    },
+                    sanitizeMarkdown(markdown) {
+                        const html = marked.parse(markdown);
+                        return DOMPurify.sanitize(html);
+                    },
+                    // 从编辑器获取内容的方法
+                    getEditorContent() {
+                        const editorWindow = window.open(`/admin/editor.html?postId=${this.selectedPost.id}&category=${encodeURIComponent(this.selectedPost.category)}&content=${encodeURIComponent(this.selectedPost.content)}`, '_blank', 'width=800,height=600');
+                        const self = this;
+                        const intervalId = setInterval(() => {
+                            if (editorWindow && editorWindow.editor) {
+                                const editorData = editorWindow.editor.getEditorContent();
+                                if (self.selectedPost.id) {
+                                    // 更新当前选中文章的内容
+                                    self.posts = self.posts.map(post => {
+                                        if (post.id === self.selectedPost.id) {
+                                            post.content = editorData.content;
+                                            post.category = editorData.category;
+                                        }
+                                        return post;
+                                    });
+                                    self.selectedPost.content = editorData.content;
+                                    self.selectedPost.category = editorData.category;
+                                }
+                                editorWindow.close();
+                                clearInterval(intervalId);
+                            }
+                        }, 100);
+                    },
+                    // 编辑文章方法
+                    editPost() {
+                        const editorWindow = window.open(`/admin/editor.html?postId=${this.selectedPost.id}&category=${encodeURIComponent(this.selectedPost.category)}&content=${encodeURIComponent(this.selectedPost.content)}`, '_blank', 'width=800,height=600');
+                    }
+                },
+                mounted() {
+                    if (this.bodyBgImage) {
+                        document.body.style.backgroundImage = `url(${this.bodyBgImage})`;
+                        document.body.style.backgroundSize = 'cover';
+                        document.body.style.backgroundPosition = 'center';
+                    }
+                    gsap.from('.bg-white', {
+                        duration: 1,
+                        opacity: 0,
+                        y: 50,
+                        stagger: 0.2
+                    });
+                }
+            });
+
+            app.mount('#app');
+        } catch (error) {
+            console.error('应用启动出错:', error);
+        }
+    </script>
+</body>
+
+</html>    
